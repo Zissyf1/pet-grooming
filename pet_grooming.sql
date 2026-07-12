@@ -11,38 +11,26 @@ GO
 CREATE TABLE dbo.Customer
 (
     CustomerId int IDENTITY(1, 1) NOT NULL
-        CONSTRAINT PK_Customer PRIMARY KEY,
-    OwnerName nvarchar(100) NOT NULL,
-    OwnerAddress nvarchar(200) NOT NULL,
-    PetType varchar(20) NOT NULL,
-    PetName nvarchar(100) NOT NULL,
-    GroomingPrice decimal(10, 2) NOT NULL,
-    ServiceFrequency varchar(10) NOT NULL,
-    PickUpDate date NOT NULL,
+        CONSTRAINT PK_Customer PRIMARY KEY
+        CONSTRAINT CK_Customer_Id_NotNegative CHECK (CustomerId >= 0),
+    OwnerName nvarchar(100) NOT NULL
+        CONSTRAINT CK_Customer_OwnerName_NotBlank CHECK (LEN(LTRIM(RTRIM(OwnerName))) > 0),
+    OwnerAddress nvarchar(200) NOT NULL
+        CONSTRAINT CK_Customer_OwnerAddress_NotBlank CHECK (LEN(LTRIM(RTRIM(OwnerAddress))) > 0),
+    PetType varchar(20) NOT NULL
+        CONSTRAINT CK_Customer_PetType CHECK (PetType IN ('dog', 'cat', 'rabbit', 'guinea pig')),
+    PetName nvarchar(100) NOT NULL
+        CONSTRAINT CK_Customer_PetName_NotBlank CHECK (LEN(LTRIM(RTRIM(PetName))) > 0),
+    GroomingPrice decimal(10, 2) NOT NULL
+        CONSTRAINT CK_Customer_GroomingPrice CHECK (GroomingPrice >= 0),
+    ServiceFrequency varchar(10) NOT NULL
+        CONSTRAINT CK_Customer_ServiceFrequency CHECK (ServiceFrequency IN ('weekly', 'biweekly')),
+    PickUpDate date NOT NULL
+        CONSTRAINT CK_Customer_PickUpDate_Year CHECK (YEAR(PickUpDate) >= 2019),
     CustomerEndDate date NULL,
 
-    CONSTRAINT CK_Customer_OwnerName_NotBlank
-        CHECK (LEN(LTRIM(RTRIM(OwnerName))) > 0),
-    CONSTRAINT CK_Customer_OwnerAddress_NotBlank
-        CHECK (LEN(LTRIM(RTRIM(OwnerAddress))) > 0),
-    CONSTRAINT CK_Customer_PetType_NotBlank
-        CHECK (LEN(LTRIM(RTRIM(PetType))) > 0),
-    CONSTRAINT CK_Customer_PetName_NotBlank
-        CHECK (LEN(LTRIM(RTRIM(PetName))) > 0),
-    CONSTRAINT CK_Customer_ServiceFrequency_NotBlank
-        CHECK (LEN(LTRIM(RTRIM(ServiceFrequency))) > 0),
-    CONSTRAINT CK_Customer_Id_NotNegative
-        CHECK (CustomerId >= 0),
-    CONSTRAINT CK_Customer_PetType
-        CHECK (PetType IN ('dog', 'cat', 'rabbit', 'guinea pig')),
-    CONSTRAINT CK_Customer_GroomingPrice
-        CHECK (GroomingPrice >= 0),
-    CONSTRAINT CK_Customer_ServiceFrequency
-        CHECK (ServiceFrequency IN ('weekly', 'biweekly')),
     CONSTRAINT CK_Customer_CustomerEndDate
-        CHECK (CustomerEndDate IS NULL OR CustomerEndDate >= PickUpDate),
-    CONSTRAINT CK_Customer_PickUpDate_Year
-        CHECK (YEAR(PickUpDate) >= 2019)
+        CHECK (CustomerEndDate IS NULL OR CustomerEndDate >= PickUpDate)
 );
 GO
 
