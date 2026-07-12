@@ -3,35 +3,51 @@
     Run this script in the target SQL Server database.
 */
 
+-- Removes the former table name as well when upgrading a prior version of this script.
 DROP TABLE IF EXISTS dbo.PetGroomingCustomers;
+DROP TABLE IF EXISTS dbo.Customer;
 GO
 
-CREATE TABLE dbo.PetGroomingCustomers
+CREATE TABLE dbo.Customer
 (
-    PetGroomingCustomerId int IDENTITY(1, 1) NOT NULL
-        CONSTRAINT PK_PetGroomingCustomers PRIMARY KEY,
+    CustomerId int IDENTITY(1, 1) NOT NULL
+        CONSTRAINT PK_Customer PRIMARY KEY,
     OwnerName nvarchar(100) NOT NULL,
     OwnerAddress nvarchar(200) NOT NULL,
     PetType varchar(20) NOT NULL,
     PetName nvarchar(100) NOT NULL,
     GroomingPrice decimal(10, 2) NOT NULL,
     ServiceFrequency varchar(10) NOT NULL,
-    PickupDate date NOT NULL,
+    PickUpDate date NOT NULL,
     CustomerEndDate date NULL,
 
-    CONSTRAINT CK_PetGroomingCustomers_PetType
+    CONSTRAINT CK_Customer_OwnerName_NotBlank
+        CHECK (LEN(LTRIM(RTRIM(OwnerName))) > 0),
+    CONSTRAINT CK_Customer_OwnerAddress_NotBlank
+        CHECK (LEN(LTRIM(RTRIM(OwnerAddress))) > 0),
+    CONSTRAINT CK_Customer_PetType_NotBlank
+        CHECK (LEN(LTRIM(RTRIM(PetType))) > 0),
+    CONSTRAINT CK_Customer_PetName_NotBlank
+        CHECK (LEN(LTRIM(RTRIM(PetName))) > 0),
+    CONSTRAINT CK_Customer_ServiceFrequency_NotBlank
+        CHECK (LEN(LTRIM(RTRIM(ServiceFrequency))) > 0),
+    CONSTRAINT CK_Customer_Id_NotNegative
+        CHECK (CustomerId >= 0),
+    CONSTRAINT CK_Customer_PetType
         CHECK (PetType IN ('dog', 'cat', 'rabbit', 'guinea pig')),
-    CONSTRAINT CK_PetGroomingCustomers_GroomingPrice
+    CONSTRAINT CK_Customer_GroomingPrice
         CHECK (GroomingPrice >= 0),
-    CONSTRAINT CK_PetGroomingCustomers_ServiceFrequency
+    CONSTRAINT CK_Customer_ServiceFrequency
         CHECK (ServiceFrequency IN ('weekly', 'biweekly')),
-    CONSTRAINT CK_PetGroomingCustomers_CustomerEndDate
-        CHECK (CustomerEndDate IS NULL OR CustomerEndDate >= PickupDate)
+    CONSTRAINT CK_Customer_CustomerEndDate
+        CHECK (CustomerEndDate IS NULL OR CustomerEndDate >= PickUpDate),
+    CONSTRAINT CK_Customer_PickUpDate_Year
+        CHECK (YEAR(PickUpDate) >= 2019)
 );
 GO
 
-INSERT INTO dbo.PetGroomingCustomers
-    (OwnerName, OwnerAddress, PetType, PetName, GroomingPrice, ServiceFrequency, PickupDate, CustomerEndDate)
+INSERT INTO dbo.Customer
+    (OwnerName, OwnerAddress, PetType, PetName, GroomingPrice, ServiceFrequency, PickUpDate, CustomerEndDate)
 VALUES
     (N'Bry-Ann Yates', N'326 34th St. S', 'rabbit', N'Longears', 30.00, 'weekly',   '20190821', NULL),
     (N'Meg Ross', N'1719 Beach Dr SE', 'dog', N'Trooper', 55.00, 'biweekly', '20200119', NULL),
@@ -57,7 +73,7 @@ GO
 SELECT
     PetType,
     COUNT(*) AS CurrentPetCount
-FROM dbo.PetGroomingCustomers
+FROM dbo.Customer
 WHERE CustomerEndDate IS NULL
 GROUP BY PetType
 ORDER BY PetType;
@@ -68,7 +84,7 @@ SELECT
     OwnerName,
     OwnerAddress,
     COUNT(*) AS PetCount
-FROM dbo.PetGroomingCustomers
+FROM dbo.Customer
 WHERE CustomerEndDate IS NULL
 GROUP BY OwnerName, OwnerAddress
 HAVING COUNT(*) > 1
@@ -85,7 +101,7 @@ WITH CustomerCharges AS
             WHEN 'weekly' THEN 52
             WHEN 'biweekly' THEN 26
         END) AS AnnualGroomingCharge
-    FROM dbo.PetGroomingCustomers
+    FROM dbo.Customer
     WHERE CustomerEndDate IS NULL
     GROUP BY OwnerName, OwnerAddress
 )
@@ -101,7 +117,7 @@ GO
 SELECT
     PetType,
     CAST(AVG(GroomingPrice) AS decimal(10, 2)) AS AverageGroomingCharge
-FROM dbo.PetGroomingCustomers
+FROM dbo.Customer
 WHERE CustomerEndDate IS NULL
 GROUP BY PetType
 ORDER BY PetType;
